@@ -168,3 +168,165 @@ function evaluate(chess: Chess): number {
       const close =
         14 -
         (Math.abs(file(mine) - file(theirs)) +
+          Math.abs(rankOf(mine) - rankOf(theirs)))
+      const bonus = Math.round(edge * 18 + close * 8)
+      score += score > 0 ? bonus : -bonus
+    }
+  }
+  return score
+}
+
+const sideScore = (chess: Chess) =>
+  evaluate(chess) * (chess.turn() === 'w' ? 1 : -1)
+
+/** Captures and promotions first, cheapest attacker on the dearest victim. */
+function order(moves: Move[]): Move[] {
+  return moves
+    .map((move) => ({
+      move,
+      score:
+        (move.captured ? VALUES[move.captured] * 10 - VALUES[move.piece] : 0) +
+        (move.promotion ? VALUES[move.promotion] : 0),
+    }))
+    .sort((a, b) => b.score - a.score)
+    .map((entry) => entry.move)
+}
+
+function quiesce(
+  chess: Chess,
+  alpha: number,
+  beta: number,
+  ply: number,
+  deadline: number,
+  depth: number,
+): number {
+  if (Date.now() > deadline) throw new Timeout()
+  const check = chess.inCheck()
+  if (!check) {
+    const stand = sideScore(chess)
+    if (stand >= beta) return beta
+    if (stand > alpha) alpha = stand
+  }
+  if (depth <= 0) return alpha
+  const moves = order(chess.moves({ verbose: true })).filter(
+    (move) => check || move.captured || move.promotion,
+  )
+  if (!moves.length) return chess.isCheckmate() ? -MATE + ply : alpha
+  for (const move of moves) {
+    chess.move(move)
+    let value: number
+    try {
+      value = -quiesce(chess, -beta, -alpha, ply + 1, deadline, depth - 1)
+    } finally {
+      chess.undo()
+    }
+    if (value >= beta) return beta
+    if (value > alpha) alpha = value
+  }
+  return alpha
+}
+
+function negamax(
+  chess: Chess,
+  depth: number,
+  alpha: number,
+  beta: number,
+  ply: number,
+  deadline: number,
+  quiet: number,
+): number {
+  if (Date.now() > deadline) throw new Timeout()
+  if (chess.isCheckmate()) return -MATE + ply
+  if (chess.isDraw()) return 0
+  if (depth <= 0) return quiesce(chess, alpha, beta, ply, deadline, quiet)
+  for (const move of order(chess.moves({ verbose: true }))) {
+    chess.move(move)
+    let value: number
+    try {
+      value = -negamax(chess, depth - 1, -beta, -alpha, ply + 1, deadline, quiet)
+    } finally {
+      chess.undo()
+    }
+    if (value >= beta) return value
+    if (value > alpha) alpha = value
+  }
+  return alpha
+}
+
+type Ranked = { move: Move; value: number }
+
+/** Every legal move scored at this depth, best first, or null if time ran out. */
+function rank(
+  chess: Chess,
+  depth: number,
+  deadline: number,
+  quiet: number,
+): Ranked[] | null {
+  const results: Ranked[] = []
+  try {
+    for (const move of order(chess.moves({ verbose: true }))) {
+      chess.move(move)
+      let value: number
+      try {
+        value = -negamax(chess, depth - 1, -Infinity, Infinity, 1, deadline, quiet)
+      } finally {
+        chess.undo()
+      }
+      results.push({ move, value })
+    }
+  } catch (error) {
+    if (error instanceof Timeout) return null
+    throw error
+  }
+  results.sort((a, b) => b.value - a.value)
+  return results
+}
+
+function pick(ranked: Ranked[], bot: Bot): string | null {
+  if (!ranked.length) return null
+  if (Math.random() < bot.blunder)
+    return ranked[Math.floor(Math.random() * ranked.length)].move.san
+  // Variation only among moves the search rates nearly as highly, so a weaker
+  // bot plays an indifferent move rather than gifting a queen.
+  const best = ranked[0].value
+  const pool = ranked
+    .slice(0, Math.max(1, Math.min(bot.slack, ranked.length)))
+    .filter((entry) => entry.value >= best - bot.margin)
+  return pool[Math.floor(Math.random() * pool.length)].move.san
+}
+
+/**
+ * The bot's move for a position. Up to 1500 it scores every move two plies
+ * deep and then sometimes settles for less than the best. 1800 and 2100 also
+ * draw on the opening book, search three or four plies with alpha-beta pruning
+ * and a capture search, and see further when few pieces remain.
+ */
+export function chooseMove(
+  position: { pgn?: string; fen?: string },
+  level: number,
+): string | null {
+  const chess = position.fen ? new Chess(position.fen) : new Chess()
+  if (position.pgn) chess.loadPgn(position.pgn)
+  if (chess.isGameOver()) return null
+  const bot: Bot = BOTS[level] ?? BOTS[2]
+  if (bot.book > 0 && Math.random() < bot.book) {
+    const known = bookMove(chess.fen())
+    if (known) return known
+  }
+  if (bot.depth <= 2) {
+    const shallow = rank(chess, 2, Number.POSITIVE_INFINITY, 0)
+    return pick(shallow ?? [], bot) ?? chess.moves()[0] ?? null
+  }
+  const deadline = Date.now() + bot.budgetMs
+  // Fewer pieces means a wider tree; spend the same budget going deeper so
+  // won endgames are converted rather than shuffled.
+  const men = chess.board().flat().filter(Boolean).length
+  const ceiling = bot.depth + (men <= 12 ? 2 : men <= 18 ? 1 : 0)
+  let ranked = rank(chess, 2, Number.POSITIVE_INFINITY, 4) ?? []
+  for (let depth = 3; depth <= ceiling; depth++) {
+    const deeper = rank(chess, depth, deadline, 4)
+    if (!deeper) break
+    ranked = deeper
+  }
+  return pick(ranked, bot) ?? chess.moves()[0] ?? null
+}
