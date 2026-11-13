@@ -103,3 +103,10 @@ signing in does not retroactively claim guest results. Signing out does not
 permit the guest cookie to control the account's seats.
 
 The lobby shows up to 20 public waiting games created in the last 30 minutes.
+Game history shows the latest 50; signed-in stats aggregate completed account
+games. Game creation has a per-session cooldown and active-game cap. The managed
+realtime limits still apply; this is a small casual chess room, not a tournament
+service. No platform Postgres schema, auth provider or dispatcher is changed.
+
+All visible copy uses sentence case. Fonts are bundled locally. No tracking,
+remote image requests or purchased chess artwork are required.
