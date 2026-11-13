@@ -118,3 +118,133 @@ export function Board({
     }
     setSelection(chess.get(square)?.color === turn && enabled ? square : null)
   }
+  const atPointer = (x: number, y: number) => {
+    const rect = root.current!.getBoundingClientRect()
+    const col = Math.floor(((x - rect.left) / rect.width) * 8),
+      row = Math.floor(((y - rect.top) / rect.height) * 8)
+    return col >= 0 && col < 8 && row >= 0 && row < 8
+      ? squares[row * 8 + col]
+      : null
+  }
+  return (
+    <div className="board-frame">
+      <div
+        ref={root}
+        className="chess-board"
+        role="group"
+        aria-label="Chessboard"
+        onPointerMove={(event) => {
+          if (!drag) return
+          setDrag({
+            ...drag,
+            x: event.clientX,
+            y: event.clientY,
+            moving:
+              drag.moving ||
+              Math.hypot(
+                event.clientX - drag.startX,
+                event.clientY - drag.startY,
+              ) > 6,
+          })
+        }}
+        onPointerUp={(event) => {
+          if (!drag) return
+          if (drag.moving) {
+            const to = atPointer(event.clientX, event.clientY)
+            if (to) submit(drag.from, to)
+          } else select(drag.from)
+          setDrag(null)
+        }}
+        onPointerCancel={() => setDrag(null)}
+      >
+        {squares.map((square, i) => {
+          const p = chess.get(square),
+            light = (square.charCodeAt(0) + Number(square[1])) % 2 === 1
+          const last = history?.from === square || history?.to === square
+          return (
+            <button
+              key={square}
+              className={`square ${light ? 'light' : 'dark'} ${last ? 'last-move' : ''} ${selected === square ? 'selected' : ''} ${p?.type === 'k' && p.color === chess.turn() && chess.inCheck() ? 'in-check' : ''}`}
+              aria-label={`${square}${p ? ` ${p.color === 'w' ? 'White' : 'Black'} ${names[p.type]}` : ''}`}
+              aria-pressed={selected === square}
+              onPointerDown={(event) => {
+                if (event.button !== 0 || !enabled) return
+                if (p?.color === turn) {
+                  event.currentTarget.setPointerCapture(event.pointerId)
+                  setDrag({
+                    from: square,
+                    x: event.clientX,
+                    y: event.clientY,
+                    startX: event.clientX,
+                    startY: event.clientY,
+                    moving: false,
+                  })
+                }
+              }}
+              onClick={(event) => {
+                if (event.detail === 0 || p?.color !== turn) select(square)
+              }}
+            >
+              {i % 8 === 0 && <span className="rank">{square[1]}</span>}
+              {i >= 56 && <span className="file">{square[0]}</span>}
+              {legal.includes(square) && (
+                <span className={p ? 'capture-ring' : 'move-dot'} />
+              )}
+            </button>
+          )
+        })}
+        <div className="pieces-layer">
+          {positions.map((p) => {
+            const pos = coordinate(p.square),
+              moving = drag?.from === p.square && drag.moving,
+              rect = root.current?.getBoundingClientRect()
+            return (
+              <div
+                key={p.id}
+                className={`board-piece ${moving ? 'dragging' : ''}`}
+                style={{
+                  transform:
+                    moving && rect
+                      ? `translate(${((drag.x - rect.left) / rect.width) * 800 - 50}%, ${((drag.y - rect.top) / rect.height) * 800 - 50}%)`
+                      : `translate(${pos.x * 100}%, ${pos.y * 100}%)`,
+                }}
+              >
+                <Piece type={p.type} color={p.color} />
+              </div>
+            )
+          })}
+        </div>
+        {promotion && (
+          <div
+            className="promotion-backdrop"
+            role="dialog"
+            aria-label="Promote pawn"
+            aria-modal="true"
+          >
+            <div className="promotion-choices">
+              {(['q', 'r', 'b', 'n'] as PieceSymbol[]).map((type) => (
+                <button
+                  autoFocus={type === 'q'}
+                  key={type}
+                  aria-label={`Promote to ${names[type]}`}
+                  onClick={() => {
+                    onMove(promotion.from, promotion.to, type)
+                    setPromotion(null)
+                  }}
+                >
+                  <Piece type={type} color={turn} />
+                </button>
+              ))}
+              <button
+                className="promotion-cancel"
+                onClick={() => setPromotion(null)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
