@@ -348,3 +348,366 @@ async function attachAccount(
       player,
       await accountFor(c.env, player),
       await themeFor(c.env, player.sub),
+    ),
+  )
+}
+app.post('/api/session', async (c) => {
+  const player = await ensurePlayer(c)
+  return c.json(
+    sessionView(
+      c.env,
+      player,
+      await accountFor(c.env, player),
+      await themeFor(c.env, player.sub),
+    ),
+  )
+})
+app.post('/api/auth/signup', async (c) => {
+  const body = await readJson<{
+    name: string
+    email: string
+    password: string
+  }>(c)
+  const email =
+    typeof body.email === 'string' ? body.email.trim().toLowerCase() : ''
+  const password = typeof body.password === 'string' ? body.password : ''
+  const name =
+    (typeof body.name === 'string' ? body.name.trim() : '').slice(0, 40) ||
+    email.split('@')[0]?.slice(0, 40) ||
+    'Player'
+  if (email.length > 254 || !EMAIL.test(email))
+    return c.json({ error: 'Enter a valid email address.' }, 400)
+  if (password.length < 8)
+    return c.json({ error: 'Use at least 8 characters for a password.' }, 400)
+  if (password.length > 200)
+    return c.json({ error: 'That password is too long.' }, 400)
+  const taken = await c.env.DB.prepare('SELECT id FROM accounts WHERE email = ?')
+    .bind(email)
+    .first()
+  if (taken)
+    return c.json(
+      { error: 'That email already has an account. Sign in instead.' },
+      409,
+    )
+  const salt = randomHex(16)
+  const account = { id: crypto.randomUUID(), name }
+  await c.env.DB.prepare(
+    'INSERT INTO accounts (id, email, name, salt, hash, created_at, last_login) VALUES (?, ?, ?, ?, ?, ?, ?)',
+  )
+    .bind(
+      account.id,
+      email,
+      name,
+      salt,
+      await stretch(password, salt),
+      Date.now(),
+      Date.now(),
+    )
+    .run()
+  return attachAccount(c, account)
+})
+app.post('/api/auth/login', async (c) => {
+  const body = await readJson<{ email: string; password: string }>(c)
+  const email =
+    typeof body.email === 'string' ? body.email.trim().toLowerCase() : ''
+  const password = typeof body.password === 'string' ? body.password : ''
+  const account = await c.env.DB.prepare(
+    'SELECT id, name, salt, hash FROM accounts WHERE email = ?',
+  )
+    .bind(email)
+    .first<{ id: string; name: string; salt: string; hash: string }>()
+  const digest = account ? await stretch(password, account.salt) : ''
+  if (!account || !equalDigest(digest, account.hash))
+    return c.json({ error: 'That email and password do not match.' }, 401)
+  await c.env.DB.prepare('UPDATE accounts SET last_login = ? WHERE id = ?')
+    .bind(Date.now(), account.id)
+    .run()
+  return attachAccount(c, account)
+})
+app.post('/api/auth/logout', async (c) => {
+  const player = await ensurePlayer(c)
+  const name = `Guest ${Math.floor(1000 + Math.random() * 9000)}`
+  await c.env.DB.prepare(
+    'UPDATE players SET account_id = NULL, name = ? WHERE id = ?',
+  )
+    .bind(name, player.id)
+    .run()
+  player.account_id = null
+  player.sub = null
+  player.name = name
+  return c.json(sessionView(c.env, player, null, null))
+})
+const MAX_AVATAR = 200_000
+app.post('/api/profile', async (c) => {
+  const player = await ensurePlayer(c)
+  if (!player.account_id)
+    return c.json({ error: 'Sign in to change your profile.' }, 401)
+  const body = await readJson<{
+    name: string
+    avatar: string | null
+    sound: boolean
+  }>(c)
+  const name =
+    typeof body.name === 'string' ? body.name.trim().slice(0, 40) : null
+  if (name !== null && name.length < 2)
+    return c.json({ error: 'Use at least 2 characters for your name.' }, 400)
+  let avatar: string | null | undefined
+  if (body.avatar !== undefined) {
+    avatar = body.avatar
+    if (
+      avatar !== null &&
+      (typeof avatar !== 'string' ||
+        avatar.length > MAX_AVATAR ||
+        !/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(avatar))
+    )
+      return c.json({ error: 'That image could not be saved.' }, 400)
+  }
+  const sound = typeof body.sound === 'boolean' ? (body.sound ? 1 : 0) : null
+  const updates: string[] = []
+  const values: unknown[] = []
+  if (name !== null) {
+    updates.push('name = ?')
+    values.push(name)
+  }
+  if (avatar !== undefined) {
+    updates.push('avatar = ?')
+    values.push(avatar)
+  }
+  if (sound !== null) {
+    updates.push('sound = ?')
+    values.push(sound)
+  }
+  if (!updates.length) return c.json({ error: 'Nothing to change.' }, 400)
+  values.push(player.account_id)
+  await c.env.DB.prepare(
+    `UPDATE accounts SET ${updates.join(', ')} WHERE id = ?`,
+  )
+    .bind(...values)
+    .run()
+  if (name !== null) {
+    await c.env.DB.prepare('UPDATE players SET name = ? WHERE id = ?')
+      .bind(name, player.id)
+      .run()
+    player.name = name
+  }
+  return c.json(
+    sessionView(
+      c.env,
+      player,
+      await accountFor(c.env, player),
+      await themeFor(c.env, player.sub),
+    ),
+  )
+})
+app.post('/api/preferences', async (c) => {
+  const player = c.get('player')
+  if (!player.sub) return c.json({ error: 'Sign in to keep a theme.' }, 401)
+  const body = await readJson<{ theme: string }>(c)
+  if (!isThemeId(body.theme)) return c.json({ error: 'Unknown theme.' }, 400)
+  await c.env.DB.prepare(
+    'INSERT INTO preferences (sub, theme, updated_at) VALUES (?, ?, ?) ON CONFLICT(sub) DO UPDATE SET theme = excluded.theme, updated_at = excluded.updated_at',
+  )
+    .bind(player.sub, body.theme, Date.now())
+    .run()
+  return c.json({ theme: body.theme })
+})
+app.get('/api/games', async (c) => {
+  const rows = await c.env.DB.prepare(
+    'SELECT state FROM games WHERE status = ? AND public = 1 AND created_at > ? ORDER BY created_at DESC LIMIT 20',
+  )
+    .bind('waiting', Date.now() - 1800000)
+    .all<{ state: string }>()
+  return c.json(
+    rows.results.map((row) =>
+      view(JSON.parse(row.state), c.get('player'), Date.now()),
+    ),
+  )
+})
+app.get('/api/history', async (c) => {
+  const player = c.get('player')
+  const rows = await c.env.DB.prepare(
+    'SELECT state FROM games WHERE ((white_id = ? AND white_sub IS NULL) OR (black_id = ? AND black_sub IS NULL) OR white_sub = ? OR black_sub = ?) ORDER BY created_at DESC LIMIT 50',
+  )
+    .bind(player.id, player.id, player.sub, player.sub)
+    .all<{ state: string }>()
+  const games = rows.results.map((row) => {
+    const game = JSON.parse(row.state) as Game
+    const id =
+      player.sub && game.white?.sub === player.sub
+        ? game.white.id
+        : player.sub && game.black?.sub === player.sub
+          ? game.black.id
+          : player.id
+    return publicGame(game, id, Date.now())
+  })
+  // Aggregate completed games for this authenticated account, with indexed predicates.
+  const stats = player.sub
+    ? await c.env.DB.prepare(
+        `SELECT COUNT(*) AS played, SUM(CASE WHEN (white_sub = ? AND json_extract(state, '$.result') = '1-0') OR (black_sub = ? AND json_extract(state, '$.result') = '0-1') THEN 1 ELSE 0 END) AS wins, SUM(CASE WHEN json_extract(state, '$.result') = '½-½' THEN 1 ELSE 0 END) AS draws FROM games WHERE status = 'finished' AND (white_sub = ? OR black_sub = ?)`,
+      )
+        .bind(player.sub, player.sub, player.sub, player.sub)
+        .first()
+    : null
+  return c.json({ games, stats })
+})
+app.post('/api/games', async (c) => {
+  const body = await c.req.json<{
+    minutes: number
+    increment: number
+    public: boolean
+    color: string
+  }>()
+  if (
+    !CONTROLS.some(
+      (t) => t.minutes === body.minutes && t.increment === body.increment,
+    ) ||
+    typeof body.public !== 'boolean' ||
+    !['w', 'b', 'random'].includes(body.color)
+  )
+    return c.json({ error: 'Choose a time control and a side.' }, 400)
+  const player = c.get('player')
+  const admitted = await c.env.DB.prepare(
+    'UPDATE players SET last_create = ? WHERE id = ? AND last_create < ?',
+  )
+    .bind(Date.now(), player.id, Date.now() - 5000)
+    .run()
+  if (!admitted.meta.changes)
+    return c.json({ error: 'Wait a moment before creating another game.' }, 429)
+  const active = await c.env.DB.prepare(
+    "SELECT id FROM games WHERE status IN ('waiting', 'playing') AND (white_id = ? OR black_id = ?) AND created_at > ? LIMIT 5",
+  )
+    .bind(player.id, player.id, Date.now() - 86400000)
+    .all()
+  if (active.results.length >= 5)
+    return c.json({ error: 'Finish or cancel an existing game first.' }, 409)
+  const game = newGame(
+    player,
+    {
+      ...body,
+      color:
+        body.color === 'random'
+          ? Math.random() < 0.5
+            ? 'w'
+            : 'b'
+          : (body.color as 'w' | 'b'),
+    },
+    Date.now(),
+  )
+  await c.env.DB.prepare(
+    'INSERT INTO games (id, code, revision, status, public, white_id, black_id, white_sub, black_sub, created_at, state) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+  )
+    .bind(
+      game.id,
+      game.code,
+      0,
+      game.status,
+      Number(game.public),
+      game.white?.id ?? null,
+      game.black?.id ?? null,
+      game.white?.sub ?? null,
+      game.black?.sub ?? null,
+      game.createdAt,
+      JSON.stringify(game),
+    )
+    .run()
+  return c.json(publicGame(game, player.id, Date.now()), 201)
+})
+app.get('/api/games/:id', async (c) => {
+  let game = await load(c.env.DB, c.req.param('id'))
+  if (!game) return c.json({ error: 'Game not found.' }, 404)
+  const settled = settleClock(game, Date.now())
+  if (settled !== game) {
+    try {
+      game = await save(c.env.DB, game, settled)
+      c.executionCtx.waitUntil(broadcast(c.env, game))
+    } catch (error) {
+      if (!(error instanceof GameError)) throw error
+      game = (await load(c.env.DB, game.id))!
+    }
+  }
+  return c.json(view(game, c.get('player'), Date.now()))
+})
+app.post('/api/games/:id/:action', async (c) => {
+  const game = await load(c.env.DB, c.req.param('id'))
+  if (!game) return c.json({ error: 'Game not found.' }, 404)
+  const player = c.get('player'),
+    action = c.req.param('action'),
+    now = Date.now()
+  const body = await c.req.json<{
+    revision?: number
+    from?: string
+    to?: string
+    promotion?: string
+  }>()
+  const actor = actorFor(game, player)
+  const seat = seatFor(game, actor)
+  let next: Game
+  if (action === 'join') next = actor ? game : joinGame(game, player, now)
+  else {
+    if (!seat)
+      return c.json({ error: 'Only the players can change this game.' }, 403)
+    if (body.revision !== game.revision)
+      return c.json({ error: 'The board changed. Try again.' }, 409)
+    next = settleClock(game, now)
+    if (next === game) {
+      if (action === 'cancel' && game.status === 'waiting')
+        next = { ...game, status: 'cancelled' }
+      else if (game.status !== 'playing')
+        return c.json({ error: 'This game is not in play.' }, 409)
+      else if (action === 'move')
+        next = moveGame(
+          game,
+          actor,
+          body.from ?? '',
+          body.to ?? '',
+          body.promotion,
+          now,
+        )
+      else if (action === 'resign')
+        next = finish(game, seat === 'w' ? '0-1' : '1-0', 'Resignation', now)
+      else if (action === 'draw')
+        next =
+          game.drawOffer && game.drawOffer !== seat
+            ? finish(game, '½-½', 'Draw agreed', now)
+            : { ...game, drawOffer: seat }
+      else if (action === 'decline') next = { ...game, drawOffer: null }
+      else return c.json({ error: 'Unknown action.' }, 400)
+    }
+  }
+  if (next !== game) next = await save(c.env.DB, game, next)
+  c.executionCtx.waitUntil(broadcast(c.env, next))
+  return c.json(view(next, player, Date.now()))
+})
+app.post('/api/realtime/ticket', async (c) => {
+  if (!c.env.REALTIME) return c.json({ error: 'Realtime unavailable.' }, 503)
+  const { room } = await c.req.json<{ room: string }>()
+  if (typeof room !== 'string' || !room.startsWith('game:'))
+    return c.json({ error: 'Invalid room.' }, 400)
+  const game = await load(c.env.DB, room.slice(5))
+  if (!game || !actorFor(game, c.get('player')))
+    return c.json({ error: 'Join the game first.' }, 403)
+  return c.json(
+    await createRealtimeTicket(c.env, {
+      room: `game:${game.id}`,
+      userId: c.get('player').id,
+      origin: originFor(c.req.raw, c.env.APP_ORIGIN),
+      publish: false,
+      presence: true,
+    }),
+  )
+})
+app.onError((error, c) => {
+  if (error instanceof GameError) return c.json({ error: error.message }, 409)
+  if (error instanceof SyntaxError)
+    return c.json({ error: 'Invalid request.' }, 400)
+  console.error('Chess request failed', error.name)
+  return c.json({ error: 'Could not complete that request. Try again.' }, 500)
+})
+app.notFound((c) =>
+  c.req.path.startsWith('/api/')
+    ? c.json({ error: 'Not found.' }, 404)
+    : c.env.ASSETS.fetch(c.req.raw),
+)
+export default {
+  fetch: app.fetch,
+}
