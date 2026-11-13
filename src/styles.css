@@ -2398,3 +2398,421 @@ main {
   outline-offset: 2px;
 }
 .auth-form .auth-primary {
+  width: 100%;
+  margin-top: 4px;
+}
+.auth-form .auth-secondary {
+  width: 100%;
+}
+.auth-error {
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: #a15b42;
+}
+/* On a short, narrow window the pitch fills the page, so the top corners would
+   sit behind the headline. Keep only the bottom pair there. */
+@media (max-width: 980px) and (max-height: 1100px) {
+  .auth-piece--top {
+    display: none;
+  }
+}
+
+/* Settings dialog: photo, display name, board palette and sound. */
+.account-avatar {
+  overflow: hidden;
+}
+.account-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: inherit;
+}
+.settings-avatar-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 10px;
+}
+.settings-avatar {
+  width: 66px;
+  height: 66px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #e8eadf;
+  color: #5d6b57;
+  font-family: 'Lora Variable', Georgia, serif;
+  font-size: 26px;
+}
+.settings-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.settings-avatar-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+.settings-avatar-actions .secondary {
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  font-size: 12.5px;
+}
+.settings-hint {
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+.settings-hint a {
+  color: var(--green);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.settings-group {
+  margin: 18px 0 0;
+  padding: 0;
+  border: 0;
+}
+.settings-group legend {
+  padding: 0;
+  margin-bottom: 8px;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.35px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.settings-themes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.theme-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fff;
+  font-size: 12.5px;
+  text-align: left;
+}
+.theme-chip[aria-pressed='true'] {
+  border-color: #93a889;
+  background: #eef2e7;
+  font-weight: 600;
+}
+.settings-toggle {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 18px;
+  font-size: 13px;
+}
+.settings-toggle input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--green);
+}
+
+/* Photo crop: a round stage you can drag, with a zoom slider. */
+.crop {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+.crop-stage {
+  position: relative;
+  width: 210px;
+  height: 210px;
+  align-self: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #e8eadf;
+  cursor: grab;
+  touch-action: none;
+}
+.crop-stage:active {
+  cursor: grabbing;
+}
+.crop-stage img {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  max-width: none;
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+.crop-zoom {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.crop-zoom input {
+  flex: 1;
+  accent-color: var(--green);
+}
+.crop-actions {
+  display: flex;
+  gap: 8px;
+}
+.crop-actions .secondary {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  font-size: 12.5px;
+}
+.account-avatar {
+  padding: 0;
+}
+.account-avatar:hover {
+  border-color: #93a889;
+}
+.account-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ---------- Dashboard ---------- */
+.dash-page {
+  min-height: 100dvh;
+  background: var(--paper);
+  color: var(--ink);
+  padding: 22px 26px 48px;
+}
+.dash-header {
+  max-width: 980px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.dash-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.dash-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 13px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #6b7a5d;
+}
+.dash-link:hover {
+  background: #efefe5;
+  border-color: #dfe2d5;
+  color: #354c30;
+}
+.dash-main {
+  max-width: 980px;
+  margin: 0 auto;
+  padding-top: 34px;
+  display: grid;
+  gap: 20px;
+}
+.dash-hero {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 24px;
+}
+.dash-avatar {
+  flex: 0 0 auto;
+  width: 74px;
+  height: 74px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: #e6e6d9;
+  color: #5b6a50;
+  font-family: 'Lora Variable', serif;
+  font-size: 28px;
+}
+.dash-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.dash-hero-text {
+  flex: 1 1 220px;
+}
+.dash-hero-text h1 {
+  margin: 4px 0 6px;
+  font-family: 'Lora Variable', serif;
+  font-size: 26px;
+  font-weight: 500;
+}
+.dash-hero-text p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+.dash-hero-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: stretch;
+}
+.dash-hero-actions .auth-primary {
+  width: auto;
+  justify-content: center;
+}
+.dash-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.dash-stats > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 18px 20px;
+}
+.dash-stats strong {
+  font-family: 'Lora Variable', serif;
+  font-size: 26px;
+  font-weight: 500;
+}
+.dash-stats span {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.dash-games {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 20px 22px 12px;
+}
+.dash-games h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.dash-games ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.dash-games li + li {
+  border-top: 1px solid var(--line);
+}
+.dash-games li a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 0;
+  font-size: 13px;
+  border-radius: 6px;
+}
+.dash-games li a:hover .dash-opponent {
+  color: #354c30;
+}
+.dash-result {
+  min-width: 66px;
+  text-align: center;
+  padding: 4px 8px;
+  border-radius: 5px;
+  background: #eceee3;
+  color: #6b7a5d;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.dash-result.win {
+  background: #e2ecdd;
+  color: #40663c;
+}
+.dash-result.loss {
+  background: #f3e4dd;
+  color: #8a5442;
+}
+.dash-result.open {
+  background: #eef0e0;
+  color: #7d8253;
+}
+.dash-opponent {
+  flex: 1;
+}
+.dash-meta {
+  font-size: 11px;
+  color: var(--muted);
+}
+.dash-empty {
+  margin: 0;
+  padding: 4px 0 12px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.dash-signed-out {
+  display: block;
+}
+.dash-signed-out h1 {
+  max-width: 520px;
+  margin: 8px 0 8px;
+}
+.dash-signed-out .dash-hero-actions {
+  flex-direction: row;
+  align-items: center;
+  margin-top: 16px;
+}
+@media (max-width: 700px) {
+  .dash-page {
+    padding: 18px 16px 36px;
+  }
+  .dash-hero {
+    padding: 20px;
+  }
+  .dash-hero-text h1 {
+    font-size: 22px;
+  }
+  .dash-stats {
+    gap: 8px;
+  }
+  .dash-stats > div {
+    padding: 14px 14px;
+  }
+  .dash-stats strong {
+    font-size: 21px;
+  }
+  .dash-meta {
+    display: none;
+  }
+  .dash-games {
+    padding: 18px 16px 10px;
+  }
+}
