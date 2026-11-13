@@ -83,3 +83,23 @@ The evaluations add passed-pawn, rook-file and king-safety terms, and in a won e
 
 ## State and identity
 
+The server validates every online move. A compare-and-set on the game's revision
+commits the entire state, clock and outcome atomically. Concurrent joins or moves
+cannot overwrite each other. Published events contain only a revision; clients
+fetch authoritative state, ignore older revisions and resync after reconnect.
+A four-second snapshot fallback repairs a missed publication and resolves clocks
+even if realtime is unavailable. Clocks use server time; an expired clock is
+settled when the game is next read or changed. Guests cannot publish game events.
+
+D1 stores this site's games and a SHA-256 hash of each random guest credential.
+The credential lives only in an HttpOnly, SameSite cookie (Secure on hosted
+origins). Invites identify a game, never authorize a player's moves. Games and
+stats are casual, with no matchmaking rating or anti-cheat claim.
+
+Signing in before creating or joining a game associates that seat with the
+server-verified account id. That account can resume on another device and
+its wins, losses and draws persist. Guest history remains in that browser;
+signing in does not retroactively claim guest results. Signing out does not
+permit the guest cookie to control the account's seats.
+
+The lobby shows up to 20 public waiting games created in the last 30 minutes.
