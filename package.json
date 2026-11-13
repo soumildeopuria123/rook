@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "dev:realtime": "wrangler dev --local -c freebuff-realtime/wrangler.jsonc --inspector-port 9234",
+    "dev:realtime": "wrangler dev --local -c realtime/wrangler.jsonc --inspector-port 9234",
     "build": "vite build && node scripts/postbuild.mjs",
     "typecheck": "tsc --noEmit",
     "test": "bun test tests"

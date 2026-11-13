@@ -1,1 +1,0 @@
-export function connectRealtime(options: { room: string; ticketUrl?: string; onStatus?: (status: string) => void; onMessage?: (message: { type: string; members?: unknown[]; userId?: string | null }) => void; websocketUrl?: (url: string) => string }): { close(): void; broadcast(event: string, data: unknown): boolean; presence(data: unknown): boolean }

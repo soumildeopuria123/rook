@@ -45,13 +45,11 @@ other configuration or external provider.
 Local `wrangler.jsonc` values and database ids are never deployed as platform
 configuration. No API key, session secret or external chess service is needed.
 
-The hosted demo is at
-https://site-9026a518791f45bbb3fe07b01ec05260.freebuff.page.
-It has its own isolated database and realtime helper. Projects created from
-this template provision their own resources; they do not share the demo's games
-or accounts. Publishing the starter catalog does not promote the demo's data.
+Each deployment has its own isolated database and realtime helper. Projects
+created from this repository provision their own resources; they never share
+another deployment's games or accounts.
 
-The generated `freebuff-realtime/worker.js` is **local development only**. Sites
+The generated `realtime/worker.js` is **local development only**. The host
 deploys its own managed helper. Never upload the local helper as an app Worker.
 Stop both local processes when finished.
 

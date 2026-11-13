@@ -19,7 +19,7 @@ import {
 import {
   createRealtimeTicket,
   publishRealtime,
-} from '../../freebuff-realtime/server.js'
+} from '../../realtime/server.js'
 import { isThemeId } from '../shared/themes'
 
 type Env = {

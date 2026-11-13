@@ -44,7 +44,7 @@ import {
   type Game,
   type PublicGame,
 } from '../shared/game'
-import { connectRealtime } from '../../freebuff-realtime/browser.js'
+import { connectRealtime } from '../../realtime/browser.js'
 import { BOTS } from '../shared/bots'
 import { personaOf } from '../shared/players'
 import { MARKS, reviewGame, type Review } from '../shared/review'
