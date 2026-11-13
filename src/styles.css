@@ -1,0 +1,400 @@
+:root {
+  font-family: 'DM Sans Variable', sans-serif;
+  color: #32392f;
+  background: #f4f3ed;
+  font-synthesis: none;
+  font-weight: 400;
+  --paper: #f4f3ed;
+  --panel: #fcfbf7;
+  --ink: #32392f;
+  --muted: #8a8c7f;
+  --line: #e3e4da;
+  --green: #49654e;
+  --light-square: #eae7d5;
+  --dark-square: #82977b;
+  --board-rim: #65745d;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+button,
+input,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+button,
+input {
+  font: inherit;
+}
+button,
+a {
+  touch-action: manipulation;
+}
+button {
+  cursor: pointer;
+  color: inherit;
+}
+button {
+  border: 0;
+  background: none;
+}
+button:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+a {
+  color: inherit;
+  text-decoration: none;
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+  outline: 3px solid #b09353;
+  outline-offset: 4px;
+}
+button {
+  transition:
+    background 0.18s,
+    color 0.18s,
+    box-shadow 0.18s,
+    transform 0.18s;
+}
+button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+svg {
+  flex-shrink: 0;
+}
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+button svg {
+  pointer-events: none;
+}
+h1,
+h2,
+h3,
+.brand {
+  font-family: 'Lora Variable', Georgia, serif;
+  font-weight: 500;
+}
+body:has(.modal-backdrop) {
+  overflow: hidden;
+}
+.app {
+  min-height: 100dvh;
+  display: flex;
+}
+.sidebar {
+  width: 208px;
+  flex-shrink: 0;
+  position: fixed;
+  inset: 0 auto 0 0;
+  padding: 38px 22px 24px;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--line);
+  background: #eeeee5;
+}
+.brand {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  font-size: 43px;
+  letter-spacing: -2.7px;
+  margin: 0 0 55px 13px;
+  line-height: 1;
+}
+.brand > svg {
+  width: 31px;
+  height: 36px;
+  fill: #3e5743;
+  stroke: #3e5743;
+  stroke-width: 2.2;
+}
+.brand-period {
+  color: #8b9a6e;
+}
+.sidebar nav {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.nav-item {
+  height: 47px;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 0 15px;
+  border-radius: 9px;
+  width: 100%;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 500;
+  color: #737b6e;
+}
+.nav-item:hover {
+  background: #e5e8dd;
+}
+.nav-item.selected {
+  background: #dde3d4;
+  color: #3e5743;
+}
+.nav-arrow {
+  margin-left: auto;
+}
+.sidebar-bottom {
+  margin-top: auto;
+}
+.sidebar-bottom > .nav-item {
+  margin-bottom: 19px;
+  font-size: 12px;
+}
+.account {
+  display: flex;
+  gap: 10px;
+  border-top: 1px solid #dddfd3;
+  padding: 22px 1px 0;
+}
+.account-avatar {
+  width: 32px;
+  height: 32px;
+  background: #dddccf;
+  border: 1px solid #d4d4c5;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-family: 'Lora Variable';
+  font-size: 14px;
+  color: #757967;
+  flex-shrink: 0;
+}
+.account strong {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  max-width: 125px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.account a,
+.account button,
+.account span {
+  font-size: 9px;
+  color: #7c8275;
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.account button {
+  padding: 0;
+}
+.account a:hover {
+  text-decoration: underline;
+}
+main {
+  margin-left: 208px;
+  padding: 36px 48px 22px;
+  flex: 1;
+  min-width: 0;
+  max-width: 1470px;
+}
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 27px;
+}
+.eyebrow {
+  font-size: 11px;
+  color: #929486;
+  font-weight: 500;
+  letter-spacing: 0.25px;
+}
+.page-header h1 {
+  font-size: 34px;
+  letter-spacing: -1.1px;
+  line-height: 1.3;
+  margin-top: 6px;
+}
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 21px;
+  padding-top: 9px;
+}
+.quiet-badge {
+  font-size: 11px;
+  color: #7b8274;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.quiet-badge i {
+  width: 5px;
+  height: 5px;
+  background: #7b9471;
+  border-radius: 50%;
+}
+.icon-button {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  color: #858b7d;
+  padding: 0;
+}
+.icon-button:hover:not(:disabled) {
+  background: #e8eadf;
+  color: #40543c;
+}
+.game-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 310px;
+  gap: 36px;
+  align-items: start;
+  max-width: 1100px;
+}
+.board-column {
+  min-width: 0;
+  max-width: 650px;
+}
+.player-bar {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  height: 52px;
+  margin-bottom: 13px;
+}
+.board-frame + .player-bar {
+  margin-top: 14px;
+  margin-bottom: 0;
+}
+.player-avatar {
+  width: 43px;
+  height: 43px;
+  flex-shrink: 0;
+  border: 1px solid #dedfd3;
+  border-radius: 9px;
+  background: #e5e7dc;
+  padding: 0 4px;
+  overflow: hidden;
+}
+.player-avatar.b {
+  background: #dcdfd1;
+}
+.player-avatar .piece-art {
+  width: 100%;
+  height: 100%;
+  filter: none;
+}
+.player-identity {
+  min-width: 0;
+  flex: 1;
+}
+.player-identity strong {
+  font-size: 13px;
+  font-weight: 600;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.player-identity > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #929584;
+  font-size: 10px;
+  margin-top: 5px;
+}
+.presence-dot {
+  height: 5px;
+  width: 5px;
+  border-radius: 50%;
+  background: #6e8c64;
+}
+.clock {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  height: 44px;
+  min-width: 108px;
+  padding: 0 15px;
+  border-radius: 8px;
+  background: #e9e9df;
+  font-size: 26px;
+  font-weight: 500;
+  letter-spacing: -1px;
+  font-variant-numeric: tabular-nums;
+  color: #888f7e;
+  transition:
+    background 0.25s,
+    color 0.25s;
+}
+.clock svg {
+  opacity: 0.6;
+}
+.clock.ticking {
+  background: #455c43;
+  color: #fbf9e9;
+  box-shadow: 0 2px 4px #31412d15;
+}
+.clock.low {
+  color: #a14337;
+  background: #f1ddd2;
+}
+.board-frame {
+  padding: 6px;
+  background: var(--board-rim);
+  border-radius: 7px;
+  box-shadow:
+    0 12px 30px -15px #3c4a3452,
+    0 2px 3px #3f4c3520;
+  position: relative;
+}
+.chess-board {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  aspect-ratio: 1;
+  position: relative;
+  overflow: hidden;
+  border-radius: 3px;
+  isolation: isolate;
+  touch-action: none;
+  user-select: none;
+}
+.square {
+  aspect-ratio: 1;
+  position: relative;
+  border-radius: 0;
+  padding: 0;
+  touch-action: none;
+  transition: background 0.15s;
+  min-width: 0;
+}
+.square:active:not(:disabled) {
+  transform: none;
+}
+.square.light {
+  background: var(--light-square);
+}
+.square.dark {
+  background: var(--dark-square);
+}
+.square.last-move::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: #ddc870;
